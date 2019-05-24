@@ -29,7 +29,7 @@ public class TennisCourt extends JFrame {
 
 		// 화면크기지정
 		add("Center", pane );
-		setSize(1000,700);
+		setSize(1000,710);
 		setVisible( true );
 
 		setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
