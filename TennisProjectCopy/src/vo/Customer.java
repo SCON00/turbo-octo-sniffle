@@ -2,10 +2,10 @@ package vo;
 
 public class Customer {
 
-	int custNo;
-	String custName;
-	String custTel;
-	String custMail;
+	int custNo;			// 회원번호 - 자동
+	String custName;	// 회원이름
+	String custTel;		// 연락처
+	String custMail;	// 이메일
 	
 	public Customer() {
 		

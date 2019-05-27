@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
+import javax.swing.text.html.ImageView;
 
 import model.CustomerModel;
 import vo.Customer;
@@ -23,7 +24,7 @@ public class CustomerView extends JPanel {
 	JTable tableMember;
 	MemberTableModel memberTM;
 	
-	CustomerModel dao;
+	CustomerModel dao;												// 모델 객체
 	
 	public CustomerView() {
 	
@@ -45,6 +46,7 @@ public class CustomerView extends JPanel {
 	public void initStyle() {
 		tfCustNo.setEditable(false);
 	}
+	
 	public void eventProc() {
 		EventHdlr hdlr = new EventHdlr();
 		bAdd.addActionListener(hdlr);
@@ -58,8 +60,12 @@ public class CustomerView extends JPanel {
 
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				
-				System.out.println(memberTM.getValueAt(tableMember.getSelectedRow(), tableMember.getSelectedColumn()));
+				// 테이블 값 클릭시 정보 텍스트 필드에 출력
+				tfCustNo.setText(memberTM.getValueAt(tableMember.getSelectedRow(), 0).toString());
+				tfCustName.setText((String)memberTM.getValueAt(tableMember.getSelectedRow(), 1));
+				tfCustTel.setText((String)memberTM.getValueAt(tableMember.getSelectedRow(), 2));
+				tfCustEmail.setText((String)memberTM.getValueAt(tableMember.getSelectedRow(), 3));
+				System.out.println(memberTM.getValueAt(tableMember.getSelectedRow(), tableMember.getSelectedColumn()));	// 클릭 확인용 임시 출력
 			}			
 		});
 	}
@@ -79,14 +85,15 @@ public class CustomerView extends JPanel {
 			} else if(evt == bSearch) {
 				searchMember();
 			} else if(evt == tfCustTel) {
-				searchByTel(tfCustTel.getText());
+				searchByTel(tfCustTel.getText());	// 전화 입력 필드 엔터시 호출
 			} else if(evt == tfSearch) {
-				searchMember();
+				searchMember();						// 검색 텍스트 필드 엔터시 호출
 			}
 		}		
 	}
 	
 	private void clearTextField() {
+		// 텍스트 필드 입력값 초기화
 		tfCustNo.setText(null);
 		tfCustName.setText(null);
 		tfCustTel.setText(null);
@@ -108,6 +115,7 @@ public class CustomerView extends JPanel {
 	}
 
 	public void searchMember() {
+		// 테이블에 고객 정보 출력
 		int selectedIndex = comSearch.getSelectedIndex();
 		String searchWord = tfSearch.getText();
 		try {
@@ -124,6 +132,7 @@ public class CustomerView extends JPanel {
 		try {
 			int result = dao.deleteCustomer(custNum);
 			tfCustNo.setText("삭제 완료 " + result);
+			memberTM.fireTableDataChanged();
 		} catch (Exception e) {
 			JOptionPane.showMessageDialog(null, "삭제실패! " + e.getMessage());
 			e.printStackTrace();
@@ -140,6 +149,7 @@ public class CustomerView extends JPanel {
 		try {
 			int result = dao.updateCustomer(vo);
 			clearTextField();
+			memberTM.fireTableDataChanged();
 			JOptionPane.showMessageDialog(null, "입력결과: " + result);
 		} catch (Exception e) {
 			JOptionPane.showMessageDialog(null, "입력실패! " + e.getMessage());
@@ -155,6 +165,7 @@ public class CustomerView extends JPanel {
 		try {
 			dao.insertCustomer(vo);
 			clearTextField();
+			memberTM.fireTableDataChanged();
 			tfCustNo.setText("입력완료");
 		} catch (Exception e) {
 			JOptionPane.showMessageDialog(null, "입력실패! " + e.getMessage());
@@ -185,12 +196,13 @@ public class CustomerView extends JPanel {
 		JPanel p_north = new JPanel();
 		p_north.setBorder(new LineBorder(Color.LIGHT_GRAY, 3, true));
 		p_north.setLayout(new BorderLayout());
-		
+			
+					
 			JPanel p_north_c = new JPanel();
 			p_north_c.setLayout(new GridLayout(4,4,8,8));
-			p_north_c.add(new JLabel("Member", JTextField.LEFT));
 			p_north_c.add(new JLabel(""));
-			p_north_c.add(new JLabel("Coach"));
+			p_north_c.add(new JLabel("Member", JTextField.RIGHT));			
+			p_north_c.add(new JLabel("고객관리", JTextField.LEFT));
 			p_north_c.add(new JLabel(""));
 			p_north_c.add(new JLabel("이 름", JTextField.RIGHT));
 			p_north_c.add(tfCustName);
@@ -199,17 +211,29 @@ public class CustomerView extends JPanel {
 			p_north_c.add(new JLabel("연 락 처", JTextField.RIGHT));
 			p_north_c.add(tfCustTel);
 			p_north_c.add(new JLabel("휴 일", JTextField.RIGHT));
-			p_north_c.add(new JTextField(20));
+			p_north_c.add(new JTextField(20){
+				@Override
+				public void setEditable(boolean b) {
+					// TODO Auto-generated method stub
+					super.setEditable(false);
+				}
+			});
 			p_north_c.add(new JLabel("메 일", JTextField.RIGHT));
 			p_north_c.add(tfCustEmail);
 			p_north_c.add(new JLabel("구 분", JTextField.RIGHT));
-			p_north_c.add(new JTextField(20));
+			p_north_c.add(new JTextField(20){
+				@Override
+				public void setEditable(boolean b) {
+					// TODO Auto-generated method stub
+					super.setEditable(false);
+				}
+			});
 			
 			JPanel p_north_s = new JPanel();
 			p_north_s.add(bAdd);
 			p_north_s.add(bModify);
 			p_north_s.add(bDelete);
-			
+		
 		p_north.add(p_north_c, BorderLayout.CENTER);
 		p_north.add(p_north_s, BorderLayout.SOUTH);
 		
@@ -225,7 +249,7 @@ public class CustomerView extends JPanel {
 		p_center.add(new JScrollPane(tableMember), BorderLayout.CENTER);
 			
 		add(p_north, BorderLayout.NORTH);
-		add(p_center, BorderLayout.SOUTH);	
+		add(p_center, BorderLayout.CENTER);	
 		
 	}
 	

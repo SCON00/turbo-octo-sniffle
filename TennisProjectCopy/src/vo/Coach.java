@@ -2,15 +2,16 @@ package vo;
 
 public class Coach {
 
-	int coachNo;
-	String coachName;
-	String coachTel;
-	String coachMail;
-	String coachHoliday;
+	int coachNo;			// 코치번호 - 자동
+	String coachName;		// 코치이름
+	String coachTel;		// 연락처
+	String coachMail;		// 이메일
+	String coachHoliday;	// 휴일
 	
 	public Coach() {
 		
 	}
+	
 	public Coach(int coachNo, String coachName, String coachTel, String coachMail, String coachHoliday) {
 		super();
 		this.coachNo = coachNo;

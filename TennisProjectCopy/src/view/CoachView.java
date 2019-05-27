@@ -46,6 +46,7 @@ public class CoachView extends JPanel {
 		showReserveList();
 	}
 	
+	// DB 모델 연결
 	public void connectDB() {
 		try {
 			dao = new CoachModel();
@@ -56,7 +57,7 @@ public class CoachView extends JPanel {
 	}
 	
 	public void initStyle() {
-		tfCoachNo.setEditable(false);
+		tfCoachNo.setEditable(false);	// 고유번호 필드 입력 차단
 	}
 
 	public void eventProc() {
@@ -71,7 +72,7 @@ public class CoachView extends JPanel {
 		tfSearch.addActionListener(hdlr);
 		
 		tableCoach.addMouseListener(new MouseAdapter() {
-			// 테이블 클릭 이벤트
+			// 코치 목록 테이블 클릭 이벤트
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				// 선택한 번호 값 저장
@@ -81,20 +82,23 @@ public class CoachView extends JPanel {
 		});
 		
 		tableReserve.addMouseListener(new MouseAdapter() {
-			// 테이블 클릭 이벤트
+			// 예약 내역 테이블 클릭 이벤트
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				// 선택한 번호 값 저장
 				selectedReserveNo = (Integer)(reserveTM.getValueAt(tableReserve.getSelectedRow(), 0));
 				String dayOfWeek = (String)(reserveTM.getValueAt(tableReserve.getSelectedRow(), 4));
+				int reserveDate = (Integer)(reserveTM.getValueAt(tableReserve.getSelectedRow(), 3));
+				int startTime = (Integer)(reserveTM.getValueAt(tableReserve.getSelectedRow(), 5));
+				int useTime = (Integer)(reserveTM.getValueAt(tableReserve.getSelectedRow(), 6));
 				try {
-					coachTM.data = dao.selectByDay(dayOfWeek);
+					coachTM.data = dao.selectByDay(dayOfWeek, reserveDate, startTime, useTime);
 					coachTM.fireTableDataChanged();
 				} catch (Exception ex) {
 					JOptionPane.showMessageDialog(null, "조회실패! " + ex.getMessage());
 					ex.printStackTrace();
 				}
-				System.out.println(reserveTM.getValueAt(tableReserve.getSelectedRow(), tableReserve.getSelectedColumn()));
+				System.out.println(reserveTM.getValueAt(tableReserve.getSelectedRow(), tableReserve.getSelectedColumn()));	// 클릭 확인 용 임시 출력
 			}			
 		});
 	}
@@ -106,24 +110,25 @@ public class CoachView extends JPanel {
 			Object evt = e.getSource();
 			
 			if(evt == bAdd) {
-				addCoach();
+				addCoach();								// 등록 버튼 함수 호출
 			} else if(evt == bModify) {
-				modifyCoach();
+				modifyCoach();							// 수정 버튼 함수 호출
 			} else if(evt == bDelete) {
-				deleteCoach();
+				deleteCoach();							// 삭제 버튼 함수 호출
 			} else if(evt == bSearch) {
-				searchCoach();
+				searchCoach();							// 검색 버튼 함수 호출
 			} else if(evt == bMatch) {
-				matchCoach();
+				matchCoach();							// 매치 버튼 함수 호출
 			} else if(evt == tfCoachTel) {
-				selectByTel(tfCoachTel.getText());
+				selectByTel(tfCoachTel.getText());		// 전화 입력 필드 함수 호출
 			} else if(evt == tfSearch) {
-				searchCoach();
+				searchCoach();							// 검색 입력 필드 함수 호출
 			}
 		}		
 	}
 
 	private void clearTextField() {
+		// 텍스트 필드 내용 삭제
 		tfCoachNo.setText(null);
 		tfCoachName.setText(null);
 		tfCoachTel.setText(null);
@@ -133,6 +138,7 @@ public class CoachView extends JPanel {
 	}
 	
 	public void selectByTel(String tel) {
+		// 전화 번호 필드 이용 코치 정보 검색
 		try {
 			Coach vo = dao.selectByTel(tel);
 			tfCoachName.setText(vo.getCoachName());
@@ -147,6 +153,8 @@ public class CoachView extends JPanel {
 	}
 
 	public void searchCoach() {
+		// 검색 필드 이용 코치 정보 검색
+		refreshTable();
 		int selectedIndex = comSearch.getSelectedIndex();
 		String searchWord = tfSearch.getText();
 		try {
@@ -159,12 +167,14 @@ public class CoachView extends JPanel {
 	}
 
 	public void matchCoach() {
+		// 테이블 간 선택 항목 매치
 		if(selectedCoachNo == -1 || selectedReserveNo == -1) {
 			JOptionPane.showMessageDialog(null, "매칭 항목을 선택 해주세요");
 			return;
 		} else {
 			try {
 				int result = dao.updateReserve(selectedCoachNo, selectedReserveNo);
+				showReserveList();
 				JOptionPane.showMessageDialog(null, "매칭완료! " + result); 
 			} catch (Exception e) {
 				JOptionPane.showMessageDialog(null, "매칭실패! " + e.getMessage());
@@ -179,6 +189,8 @@ public class CoachView extends JPanel {
 		try {
 			int result = dao.deleteCoach(coachNum);
 			tfCoachNo.setText("삭제 완료 " + result);
+			searchCoach();
+			refreshTable();
 		} catch (Exception e) {
 			JOptionPane.showMessageDialog(null, "삭제실패! " + e.getMessage());
 			e.printStackTrace();
@@ -195,6 +207,8 @@ public class CoachView extends JPanel {
 		
 		try {
 			int result = dao.updateCoach(vo);
+			searchCoach();
+			refreshTable();
 			clearTextField();
 			JOptionPane.showMessageDialog(null, "입력결과: " + result);
 		} catch (Exception e) {
@@ -211,6 +225,8 @@ public class CoachView extends JPanel {
 		vo.setCoachHoliday(tfCoachHoliday.getText());
 		try {
 			dao.insertCoach(vo);
+			searchCoach();
+			refreshTable();
 			clearTextField();
 			tfCoachNo.setText("입력완료");
 		} catch (Exception e) {
@@ -220,6 +236,7 @@ public class CoachView extends JPanel {
 	}
 	
 	public void showReserveList() {
+		// 매칭 필요 예약 목록 출력
 		try {
 			reserveTM.data = dao.selectCoachRequest();
 			reserveTM.fireTableDataChanged();
@@ -227,6 +244,12 @@ public class CoachView extends JPanel {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	public void refreshTable() {
+		// 테이블 선택값 초기화 - 마우스 클릭 해제
+		tableReserve.clearSelection();
+		tableCoach.clearSelection();
 	}
 	
 	public void addLayout() {
@@ -260,10 +283,10 @@ public class CoachView extends JPanel {
 		
 			// 상단 메인 영역
 			JPanel p_north_c = new JPanel();
-			p_north_c.setLayout(new GridLayout(4,4,8,8));
-			p_north_c.add(new JLabel("Member", JTextField.LEFT));
+			p_north_c.setLayout(new GridLayout(4,4,8,8));			
 			p_north_c.add(new JLabel(""));
-			p_north_c.add(new JLabel("Coach"));
+			p_north_c.add(new JLabel("Coach", JTextField.RIGHT));
+			p_north_c.add(new JLabel("강사관리"));
 			p_north_c.add(new JLabel(""));
 			p_north_c.add(new JLabel("이 름", JTextField.RIGHT));
 			p_north_c.add(tfCoachName);
@@ -276,7 +299,13 @@ public class CoachView extends JPanel {
 			p_north_c.add(new JLabel("메 일", JTextField.RIGHT));
 			p_north_c.add(tfCoachEmail);
 			p_north_c.add(new JLabel("구 분", JTextField.RIGHT));
-			p_north_c.add(new JTextField(20));
+			p_north_c.add(new JTextField(20) {
+				@Override
+				public void setEditable(boolean b) {
+					// TODO Auto-generated method stub
+					super.setEditable(false);
+				}
+			});
 			
 			// 상단 아래 영역
 			JPanel p_north_s = new JPanel();
@@ -316,7 +345,7 @@ public class CoachView extends JPanel {
 		p_center.add(p_center_c, BorderLayout.CENTER);
 			
 		add(p_north, BorderLayout.NORTH);
-		add(p_center, BorderLayout.SOUTH);	
+		add(p_center, BorderLayout.CENTER);	
 		
 	}
 	
@@ -355,7 +384,7 @@ public class CoachView extends JPanel {
 	class ReserveTableModel extends AbstractTableModel { 
 
 		ArrayList data = new ArrayList();
-		String [] columnNames = {"예약번호","회원번호","코트번호","예약일","요일","예약시간"};
+		String [] columnNames = {"예약번호","회원번호","코트번호","예약일","요일","예약시간", "이용시간"};
 
 		//=============================================================
 		// 1. 기본적인 TabelModel  만들기

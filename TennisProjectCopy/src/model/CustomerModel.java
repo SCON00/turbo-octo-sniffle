@@ -8,9 +8,9 @@ import vo.Customer;
 
 public class CustomerModel implements CustomerDao {
 
-	String url = "jdbc:oracle:thin:@192.168.0.91:1521:orcl";
-	String user = "tennis";
-	String password = "tennis";
+	String url = "jdbc:oracle:thin:@192.168.0.194:1521:orcl";
+	String user = "ojo";
+	String password = "5678";
 	
 	public CustomerModel() throws Exception {
 		OracleCon.getInstance();

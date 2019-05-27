@@ -11,9 +11,9 @@ import vo.Coach;
 
 public class CoachModel implements CoachDao {
 
-	String url = "jdbc:oracle:thin:@192.168.0.91:1521:orcl";
-	String user = "tennis";
-	String password = "tennis";
+	String url = "jdbc:oracle:thin:@192.168.0.194:1521:orcl";
+	String user = "ojo";
+	String password = "5678";
 	
 	// 요일 한글 변환
 	ArrayList dayOfWeek;
@@ -41,7 +41,7 @@ public class CoachModel implements CoachDao {
 		try {
 			// 1. 연결객체
 			con = DriverManager.getConnection(url, user, password);
-			// 2. SQL 작성
+			// 2. SQL 작성 - 코치정보 입력
 			String sql = "INSERT INTO coaches "
 					+ "(coach_id"
 					+ ", coach_name"
@@ -171,7 +171,7 @@ public class CoachModel implements CoachDao {
 		try {
 			// 1
 			con = DriverManager.getConnection(url, user, password);
-			// 2
+			// 2 이름,전화 부분 검색
 			String sql = "SELECT * FROM coaches "
 					+ "WHERE LOWER(" + cols[selectedIndex] + ") LIKE LOWER('%" + searchWord + "%') ";
 			// 3
@@ -205,8 +205,8 @@ public class CoachModel implements CoachDao {
 		try {
 			// 1 
 			con = DriverManager.getConnection(url, user, password);
-			// 2
-			String sql = "UPDATE reservation SET "
+			// 2 Match 요청시 예약 정보에 코치 번호 등록
+			String sql = "UPDATE reservations SET "
 					+ "coach_id = ? "
 					+ "WHERE reservation_id = ?";
 			// 3
@@ -231,14 +231,16 @@ public class CoachModel implements CoachDao {
 		
 		try {
 			con = DriverManager.getConnection(url, user, password);
-			
+			// 코칭 요청 'O' 이고 코치 번호가 배정되지 않은 예약 정보 조회
 			String sql = "SELECT reservation_id"
 					+ ", member_id"
 					+ ", reserve_date"
-					+ ", TO_CHAR(reserve_date, 'd') day_of_week"
+					+ ", court_id"
+					+ ", TO_CHAR(TO_DATE(reserve_date, 'YYYYMMDD'), 'd') day_of_week"
 					+ ", start_time "
+					+ ", use_time "
 					+ "FROM reservations "
-					+ "WHERE maching_check = 1";
+					+ "WHERE matching_check = 'O' AND coach_id IS NULL";
 					
 			ps = con.prepareStatement(sql);
 			
@@ -249,10 +251,11 @@ public class CoachModel implements CoachDao {
 				ArrayList data = new ArrayList();
 				data.add(rs.getInt("reservation_id"));
 				data.add(rs.getInt("member_id"));
-				data.add("1"); //rs.getString("court_id")
-				data.add(rs.getString("reserve_date"));
-				data.add(dayOfWeek.get(Integer.parseInt(rs.getString("day_of_week"))));
+				data.add(rs.getString("court_id"));
+				data.add(rs.getInt("reserve_date"));
+				data.add(dayOfWeek.get(Integer.parseInt(rs.getString("day_of_week"))-1));
 				data.add(rs.getInt("start_time"));
+				data.add(rs.getInt("use_time"));
 				list.add(data);
 			}
 			return list;
@@ -264,35 +267,68 @@ public class CoachModel implements CoachDao {
 	}
 
 	@Override
-	public ArrayList selectByDay(String dayOfWeek) throws Exception {
+	public ArrayList selectByDay(String dayOfWeek, int reserveDate, int startTime, int useTime) throws Exception {
 		Connection con = null;
+		PreparedStatement ps0 = null;
 		PreparedStatement ps = null;
+		ResultSet rs0 = null;
 		ResultSet rs = null;
 		
 		try {
 			con = DriverManager.getConnection(url, user, password);
+			/* 해당 날짜에 예약이 있는 코치 번호 조회 */
+			String sql0 = "SELECT coach_id, start_time, use_time "
+					+ "FROM reservations "
+					+ "WHERE reserve_date = ? "
+					+ "AND coach_id IS NOT NULL";
+			ps0 = con.prepareStatement(sql0);
+			ps0.setInt(1, reserveDate);
 			
+			rs0 = ps0.executeQuery();
+			ArrayList<Integer> al = new ArrayList<Integer>();
+			while(rs0.next()) {
+				
+				int coachStartTime = rs0.getInt("start_time");
+				int coachUseTime = rs0.getInt("use_time");
+				int checkTime = (Math.max(coachStartTime + coachUseTime, startTime + useTime) 
+						- Math.min(coachStartTime, startTime)) 
+						- (coachUseTime + useTime);
+				if(checkTime <= 0) {
+					al.add(rs0.getInt("coach_id"));		// 지정 시간에 코치 예약이 되어있는 번호 저장
+				}				
+			}
+			
+			/* 휴일이 해당하지 않는 코치 정보 조회 */
 			String sql = "SELECT * FROM coaches "
 					+ "WHERE coach_holiday <> ?";
-			
+						
 			ps = con.prepareStatement(sql);
-			ps.setInt(1, this.dayOfWeek.indexOf(dayOfWeek) + 1);
+			ps.setInt(1, this.dayOfWeek.indexOf(dayOfWeek) + 1);	// 요일 값 숫자로 변환
 			
 			rs = ps.executeQuery();
 			
 			ArrayList list = new ArrayList();
+			WHILELOOP:
 			while(rs.next()) {
+				
 				ArrayList data = new ArrayList();
-				data.add(rs.getInt("coach_id"));
+				int check = rs.getInt("coach_id");
+				if(al.contains(check)){
+					continue WHILELOOP;		// 시간 겹치는 코치 번호인 경우 제외
+				}
+				data.add(check);
 				data.add(rs.getString("coach_name"));
 				data.add(rs.getString("coach_contact"));
 				data.add(rs.getString("coach_mail"));
 				data.add(this.dayOfWeek.get(rs.getInt("coach_holiday")-1));
+									
 				list.add(data);
 			}
 			return list;
 		} finally {
+			rs0.close();
 			rs.close();
+			ps0.close();
 			ps.close();
 			con.close();
 		}
