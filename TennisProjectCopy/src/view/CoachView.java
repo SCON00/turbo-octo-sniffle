@@ -10,7 +10,6 @@ import javax.swing.table.*;
 
 import model.CoachModel;
 import vo.Coach;
-import vo.Customer;
 
 public class CoachView extends JPanel {
 

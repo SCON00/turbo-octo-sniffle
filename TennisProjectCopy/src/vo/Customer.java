@@ -49,5 +49,12 @@ public class Customer {
 
 	public void setCustMail(String custMail) {
 		this.custMail = custMail;
+	}
+
+	@Override
+	public String toString() {
+		return "Customer [회원번호=" + custNo + ", 회원이름=" + custName + ", 연락처=" + custTel + ", 이메일="
+				+ custMail + "]";
 	}	
+	
 }

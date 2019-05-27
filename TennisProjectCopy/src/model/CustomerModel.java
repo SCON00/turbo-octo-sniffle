@@ -8,7 +8,7 @@ import vo.Customer;
 
 public class CustomerModel implements CustomerDao {
 
-	String url = "jdbc:oracle:thin:@192.168.0.194:1521:orcl";
+	String url = "jdbc:oracle:thin:@127.0.0.1:1521:orcl";
 	String user = "ojo";
 	String password = "5678";
 	
@@ -148,7 +148,7 @@ public class CustomerModel implements CustomerDao {
 		try {
 			// 1
 			con = DriverManager.getConnection(url, user, password);
-			// 2
+			// 2 - 소문자로 모두 변환 후 검색어 포함 여부 확인
 			String sql = "SELECT * FROM members "
 					+ "WHERE LOWER(" + cols[selectedIndex] + ") LIKE LOWER('%" + searchWord + "%') ";
 			// 3

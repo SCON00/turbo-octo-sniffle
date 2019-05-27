@@ -11,7 +11,7 @@ import vo.Coach;
 
 public class CoachModel implements CoachDao {
 
-	String url = "jdbc:oracle:thin:@192.168.0.194:1521:orcl";
+	String url = "jdbc:oracle:thin:@127.0.0.1:1521:orcl";
 	String user = "ojo";
 	String password = "5678";
 	
@@ -123,7 +123,7 @@ public class CoachModel implements CoachDao {
 
 	@Override
 	public ArrayList<ArrayList> selectAll() throws Exception {
-		// TODO Auto-generated method stub
+		// 미사용
 		return null;
 	}
 
@@ -151,7 +151,7 @@ public class CoachModel implements CoachDao {
 				vo.setCoachName(rs.getString("coach_name"));
 				vo.setCoachTel(rs.getString("coach_contact"));
 				vo.setCoachMail(rs.getString("coach_mail"));
-				vo.setCoachHoliday((String)dayOfWeek.get(rs.getInt("coach_holiday")-1));
+				vo.setCoachHoliday((String)dayOfWeek.get(rs.getInt("coach_holiday")-1));	// 요일 숫자 문자로 변환
 			}
 		} finally {
 			rs.close();
@@ -185,7 +185,7 @@ public class CoachModel implements CoachDao {
 				data.add(rs.getString("coach_name"));
 				data.add(rs.getString("coach_contact"));
 				data.add(rs.getString("coach_mail"));
-				data.add(dayOfWeek.get(rs.getInt("coach_holiday")-1));
+				data.add(dayOfWeek.get(rs.getInt("coach_holiday")-1));	// 요일 숫자 문자로 변환 저장
 				list.add(data);
 			}
 			return list;
@@ -292,7 +292,7 @@ public class CoachModel implements CoachDao {
 				int coachUseTime = rs0.getInt("use_time");
 				int checkTime = (Math.max(coachStartTime + coachUseTime, startTime + useTime) 
 						- Math.min(coachStartTime, startTime)) 
-						- (coachUseTime + useTime);
+						- (coachUseTime + useTime);		// 코칭 시간과 예약 시간 겹치는 정보 계산
 				if(checkTime <= 0) {
 					al.add(rs0.getInt("coach_id"));		// 지정 시간에 코치 예약이 되어있는 번호 저장
 				}				
